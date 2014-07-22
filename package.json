@@ -1,0 +1,15 @@
+{
+  "name": "application-name",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node cn_headlines.js"
+  },
+  "dependencies": {
+    "twit": "*",
+    "request": "*",
+    "nodehun": "~0.2.4",
+    "node-wolfram": "0.0.1",
+    "async": "*"
+  }
+}
