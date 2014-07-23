@@ -1,7 +1,6 @@
 var Twit = require( 'twit' ),
     request = require( 'request' ),
     fs = require( 'fs' ),
-    nodehun = require( 'nodehun' ),
     client = require( 'node-wolfram' ),
     async = require( 'async' ),
     BitlyAPI = require( 'node-bitlyapi' );
