@@ -260,8 +260,8 @@ function run() {
 };
 
 function buildTweet() {
-    var originalHeadline = stories[1].title;
-    var link = stories[1].link;
+    var originalHeadline = stories[0].title;
+    var link = stories[0].link;
 
     async.series([
         function( callback ) {
