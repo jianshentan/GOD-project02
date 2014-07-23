@@ -29,7 +29,8 @@ var Bitly = new BitlyAPI({
 Bitly.setAccessToken( "a66826599cbedaba3ccb1ff36f4306f5e577b7f6" );
 
 // Log files
-var TWEET_LOG = "tweet_log.txt";
+var TWEET_LOG = "tweet_log.txt",
+    ERROR_LOG = "error_log.txt";
 
 
 // ============================================================== //
@@ -43,7 +44,7 @@ function getArticles() {
     var url = "http://api.usatoday.com/open/articles/topnews?api_key=" + 
               api_key + "&encoding=json";
     request.get(url, function( err, res, body ) {
-        if( err ) { console.log( err ); }
+        if( err ) { logErrors( err ); }
         else {
             stories = JSON.parse( body ).stories;
         } 
@@ -165,7 +166,7 @@ function wordType( word, cb ) {
         function( callback ) {
             wolfram.query( word, function( err, result ) {
                 if( err )
-                    console.log( err );
+                    logErrors( err );
                 else {
                     var datatypes = result.queryresult.$.datatypes.split(",");
                     if( isOverlap( datatypes, peopleKeywords ) ) {
@@ -179,7 +180,7 @@ function wordType( word, cb ) {
             });
         }], function( err, results ) {
             if( err )
-                console.log( err );
+                logErrors( err );
             else {
                 cb( results[0] );
             }
@@ -293,12 +294,12 @@ function buildTweet() {
         function( err, results ) {
             // create tweet
             if( err ) {
-                console.log( err );
+                logErrors( err );
             } else {
                 var tweet = results[1] + results[0];
                 T.post( 'statuses/update', { status: tweet }, function( err, data, response ) {
                     if( err ) {
-                        console.log( err );
+                        logErrors( err );
                     } else {
                         logTweet( data[ "text" ] );
                         console.log( tweet );
@@ -318,7 +319,12 @@ function logTweet( tweet ) {
     fs.writeFileSync( TWEET_LOG, tweet );
 };
 
-
+function logErrors( err ) {
+    if( !fs.existsSync( ERROR_LOG ) ) {
+        fs.openSync( ERROR_LOG, 'w' );
+    }
+    fs.writeFileSync( ERROR_LOG, err );
+};
 
 
 
