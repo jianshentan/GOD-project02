@@ -10,6 +10,7 @@
     "request": "*",
     "nodehun": "~0.2.4",
     "node-wolfram": "0.0.1",
-    "async": "*"
+    "async": "*",
+    "node-bitlyapi": "~0.4.0"
   }
 }
