@@ -263,7 +263,7 @@ function isLetter( c ) {
 
 
 run();
-setInterval( run, 120000 /*7200000*/ );
+setInterval( run, 7200000 );
 
 function run() {
     var stories = readStories();
