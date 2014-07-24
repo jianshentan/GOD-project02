@@ -30,13 +30,12 @@ Bitly.setAccessToken( "a66826599cbedaba3ccb1ff36f4306f5e577b7f6" );
 
 // Log files
 var TWEET_LOG = "tweet_log.txt",
-    ERROR_LOG = "error_log.txt";
+    ERROR_LOG = "error_log.txt",
+    STORY_BANK = "story_bank.txt";
 
 
 // ============================================================== //
 // refreshes array of stories everyday
-
-var stories = [];
 
 getArticles();
 setInterval( getArticles, 86400000 );
@@ -46,7 +45,7 @@ function getArticles() {
     request.get(url, function( err, res, body ) {
         if( err ) { logErrors( err ); }
         else {
-            stories = JSON.parse( body ).stories;
+            saveStories( JSON.parse( body ).stories );
         } 
     });
 };
@@ -84,6 +83,7 @@ function createHeadline( headline, cb ) {
                             break;
                         case "PLACE":
                             replace = "PLACE" + punctuationString;
+                            hasName = true;
                             break;
                         case "NAME":
                             replace = "NAME" + punctuationString;
@@ -122,10 +122,10 @@ function processSentence( words ) {
     var sentence = "";
     for( var i=0; i<words.length; i++ ) {
         var word = words[i];
-        if( word === "NAME" ) {
+        if( contains( word, "NAME" ) ) {
             if( i<words.length-1 ) {
                 var nextWord = words[i+1];
-                if( nextWord === "NAME" ) {
+                if( contains( nextWord ,"NAME" ) ) {
                     sentence += randomChinesePosition() + ", " + randomChineseName() + " ";
                     i++;
                 } else {
@@ -134,7 +134,7 @@ function processSentence( words ) {
             } else {
                 sentence += randomChinesePosition() + ", " + randomChineseName() + " ";
             }
-        } else if( word === "PLACE" ) {
+        } else if( contains( word, "PLACE" ) ) {
             sentence += "China "; 
         } else {
             sentence += word + " ";
@@ -142,6 +142,14 @@ function processSentence( words ) {
     }
     return sentence;
 };
+
+// if arg2 is in arg1, return true
+function contains( word, s ) {
+    if( word.indexOf( s ) > -1 )
+        return true;
+    else
+        return false;
+}
 
 function randomChinesePosition() {
     var positionArray = [ "Chinese Military Officer", "Chinese Communist Party Leader", "Chinese Official", "Chinese Government Executive", "Chinese Party Officer" ];
@@ -166,8 +174,11 @@ function wordType( word, cb ) {
         function( callback ) {
             wolfram.query( word, function( err, result ) {
                 if( err )
-                    logErrors( err );
+                    callback( "no results!", null );
                 else {
+                    if( !result ) {
+                        callback( "no results!", null );
+                    }
                     var datatypes = result.queryresult.$.datatypes.split(",");
                     if( isOverlap( datatypes, peopleKeywords ) ) {
                         callback( null, "NAME" );
@@ -203,8 +214,12 @@ function isCapitalized( word ) {
     if( !isLetter( word[0] ) ) {
         word = word.substring( 1, word.length-1 );
     }
-    if( word[0] === word[0].toUpperCase() ) {
-        return true;
+    if( word.length > 0 ) {
+        if( word[0] === word[0].toUpperCase() ) {
+            return true;
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
@@ -248,10 +263,11 @@ function isLetter( c ) {
 
 
 run();
-setInterval( run, 7200000 );
+setInterval( run, 120000 /*7200000*/ );
 
 function run() {
-    if( stories.length == 0 ) {
+    var stories = readStories();
+    if( !stories || stories.length <= 0 ) {
         getArticles();
         setTimeout( buildTweet, 20000 );
         return;
@@ -260,8 +276,14 @@ function run() {
 };
 
 function buildTweet() {
+    var stories = readStories();
+
     var originalHeadline = stories[0].title;
     var link = stories[0].link;
+
+    // remove first story
+    stories.shift()
+    saveStories( stories );
 
     async.series([
         function( callback ) {
@@ -287,8 +309,6 @@ function buildTweet() {
                 } else {
                     callback( null, res ); 
                 }
-                // remove first story
-                stories.shift();
             });
         }],
         function( err, results ) {
@@ -307,6 +327,7 @@ function buildTweet() {
                 });
             }
         });
+
 };
 
 // ============================================== //
@@ -326,6 +347,19 @@ function logErrors( err ) {
     fs.writeFileSync( ERROR_LOG, err );
 };
 
+function saveStories( stories ) {
+    if( !fs.existsSync( STORY_BANK ) ) {
+        fs.openSync( STORY_BANK, 'w' );
+    }
+    fs.writeFileSync( STORY_BANK, JSON.stringify( stories ) );
+};
+
+function readStories() {
+    if( fs.existsSync( STORY_BANK ) ) {
+        return JSON.parse( fs.readFileSync( STORY_BANK, 'utf8' ) );
+    }
+    return;
+};
 
 
 
